@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FedShield EDR | Operator Authentication</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: radial-gradient(circle at top, #161b22 0%, #090d16 100%);
+            color: #c9d1d9;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-card {
+            background-color: rgba(22, 27, 34, 0.92);
+            border: 1px solid #30363d;
+            border-top: 3px solid #2f81f7;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 430px;
+            padding: 2.2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+        }
+        .form-control {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #f0f6fc;
+        }
+        .form-control:focus {
+            background-color: #0d1117;
+            color: #f0f6fc;
+            border-color: #2f81f7;
+            box-shadow: 0 0 0 0.2rem rgba(47, 129, 247, 0.25);
+        }
+        .pulse-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #3fb950;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #3fb950;
+            margin-right: 6px;
+        }
+        .mono { font-family: Consolas, monospace; font-size: 0.82rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <div class="mb-2">
+                <span class="badge bg-dark border border-secondary text-info mono px-3 py-2">
+                    <span class="pulse-dot"></span>FEDAVG AGGREGATION ENGINE ONLINE
+                </span>
+            </div>
+            <h4 class="fw-bold text-light mt-3">🛡️ FedSec EDR Command</h4>
+            <p class="text-secondary small mb-0">Federated Malware Detection & Endpoint Telemetry</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger py-2 small text-center" role="alert">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <div class="mb-3">
+                <label class="form-label small text-secondary text-uppercase fw-semibold">SOC Operator ID</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter operator username" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label class="form-label small text-secondary text-uppercase fw-semibold">Security Passkey</label>
+                <input type="password" name="password" class="form-control" placeholder="••••••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">
+                Authenticate & Launch C2 Console
+            </button>
+        </form>
+
+        <div class="mt-4 pt-3 border-top border-secondary text-center mono text-secondary">
+            <div>Zero-Raw-Data Architecture • TLS/JSON Telemetry</div>
+            <div class="text-muted mt-1">Default Demo: <strong>admin</strong> / <strong>fedsec2026</strong></div>
+        </div>
+    </div>
+</body>
+</html>

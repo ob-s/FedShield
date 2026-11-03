@@ -3,60 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Federated C2 Dashboard</title>
+    <title>FedShield C2 | Federated Malware Detection Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <meta http-equiv="refresh" content="3">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="refresh" content="5">
     <style>
-        body { background-color: #0d1117; color: #c9d1d9; }
-        .card-custom { background-color: #161b22; border: 1px solid #30363d; }
+        body { background-color: #0b0f19; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar-custom { background-color: #111827; border-bottom: 1px solid #1f2937; }
+        .overview-box { background: linear-gradient(145deg, #111827, #1e293b); border: 1px solid #334155; border-radius: 10px; }
+        .overview-cell { border-right: 1px solid #334155; padding: 12px 16px; text-align: center; }
+        .overview-cell:last-child { border-right: none; }
+        .card-custom { background-color: #111827; border: 1px solid #1f2937; border-radius: 10px; }
+        .nav-pills .nav-link { color: #94a3b8; background-color: #111827; border: 1px solid #1f2937; margin-right: 8px; font-weight: 600; }
+        .nav-pills .nav-link.active { color: #ffffff; background-color: #2563eb; border-color: #3b82f6; }
+        .table-dark { --bs-table-bg: #111827; border-color: #1f2937; }
+        .mono { font-family: Consolas, monospace; font-size: 0.85rem; }
+        .progress { background-color: #1e293b; height: 10px; border-radius: 6px; }
+        .pulse-dot { height: 9px; width: 9px; background-color: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981; margin-right: 6px; }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <h2 class="mb-4 text-primary">🛡️ Federated Malware Detection Network</h2>
-        
-        <!-- Federated Network Status Panel -->
-        <div class="card card-custom p-3 mb-4">
-            <h5 class="text-info">🌐 Global Model Status (FedAvg)</h5>
-            <div class="row mt-2">
-                <div class="col-md-4"><strong>Current Round:</strong> {{ net.current_round }} / 5</div>
-                <div class="col-md-4"><strong>Global Weights:</strong> {{ net.global_model_version }}</div>
-                <div class="col-md-4 text-success"><strong>Status:</strong> {{ net.sync_status }}</div>
+    <!-- Top Bar -->
+    <nav class="navbar navbar-custom px-4 py-2 mb-3">
+        <div class="d-flex align-items-center">
+            <span class="fs-4 me-2"></span>
+            <div>
+                <span class="fw-bold text-white fs-5">Federated Malware Detection Framework</span>
+                <span class="badge bg-primary ms-2 mono">{{ overview.global_model_version }}</span>
+                <div class="text-secondary" style="font-size: 0.75rem;">
+                    Privacy-Preserving Multi-Class Neural Network Aggregation & Threat Analytics (Zero Raw Data Leakage)
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <a href="/api/export_logs" class="btn btn-sm btn-outline-info mono">Export Audit Log</a>
+            <span class="text-secondary small">Operator: <strong class="text-white">{{ user }}</strong></span>
+            <a href="/logout" class="btn btn-sm btn-outline-danger">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <!-- FEDERATED LEARNING OVERVIEW (Top Section) -->
+        <div class="overview-box mb-4">
+            <div class="row g-0 align-items-center">
+                <div class="col-md-2 overview-cell">
+                    <div class="text-secondary small text-uppercase fw-semibold">Clients</div>
+                    <h3 class="fw-bold text-info mb-0 mt-1 mono">{{ overview.active_clients_this_round }}/{{ overview.total_clients_connected }}</h3>
+                </div>
+                <div class="col-md-2 overview-cell">
+                    <div class="text-secondary small text-uppercase fw-semibold">Round</div>
+                    <h3 class="fw-bold text-warning mb-0 mt-1 mono">{{ overview.current_round }}</h3>
+                </div>
+                <div class="col-md-2 overview-cell">
+                    <div class="text-secondary small text-uppercase fw-semibold">Accuracy</div>
+                    <h3 class="fw-bold text-success mb-0 mt-1 mono">{{ overview.global_accuracy }}%</h3>
+                </div>
+                <div class="col-md-2 overview-cell">
+                    <div class="text-secondary small text-uppercase fw-semibold">Loss</div>
+                    <h3 class="fw-bold text-danger mb-0 mt-1 mono">{{ overview.global_loss }}</h3>
+                </div>
+                <div class="col-md-2 overview-cell">
+                    <div class="text-secondary small text-uppercase fw-semibold">Global Model Version</div>
+                    <h4 class="fw-bold text-primary mb-0 mt-1 mono">{{ overview.global_model_version }}</h4>
+                </div>
+                <div class="col-md-2 overview-cell">
+                    <div class="text-secondary small text-uppercase fw-semibold">Last Aggregation</div>
+                    <h5 class="fw-bold text-light mb-0 mt-1 mono">{{ overview.last_aggregation_time }}</h5>
+                </div>
             </div>
         </div>
 
-        <!-- Endpoint Telemetry Table -->
-        <h5 class="text-secondary">🖥️ Distributed Endpoint Telemetry</h5>
-        <table class="table table-dark table-hover mt-2" style="border: 1px solid #30363d;">
-            <thead>
-                <tr>
-                    <th>Endpoint ID</th>
-                    <th>Network Status</th>
-                    <th>Last Sync</th>
-                    <th>AI Classification</th>
-                    <th>Threat Behavior Type</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for client, data in clients.items() %}
-                <tr>
-                    <td><strong>{{ client }}</strong></td>
-                    <td>
-                        <span class="badge {% if data.status == 'Online' %}bg-success{% else %}bg-secondary{% endif %}">
-                            {{ data.status }}
-                        </span>
-                    </td>
-                    <td>{{ data.last_seen }}</td>
-                    <td>
-                        <span class="badge {% if data.classification == 'Benign' %}bg-info text-dark{% elif data.classification == 'None' %}bg-secondary{% else %}bg-danger{% endif %}">
-                            {{ data.classification }}
-                        </span>
-                    </td>
-                    <td class="text-warning">{{ data.threat_type }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <!-- 3 TABS -->
+        <ul class="nav nav-pills mb-3" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="tab-dash-btn" data-bs-toggle="pill" data-bs-target="#tab-dash" type="button" onclick="saveTab('tab-dash-btn')">
+                    Dashboard
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="tab-mal-btn" data-bs-toggle="pill" data-bs-target="#tab-mal" type="button" onclick="saveTab('tab-mal-btn')">
+                     Malware Analytics
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="tab-fl-btn" data-bs-toggle="pill" data-bs-target="#tab-fl" type="button" onclick="saveTab('tab-fl-btn')">
+                     Federated Learning
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- TAB 1: DASHBOARD -->
+            <div class="tab-pane fade show active" id="tab-dash">
+                <div class="row g-3">
+                    <div class="col-lg-5">
+                        <!-- Client Status Panel -->
+                        <div class="card card-custom p-3 mb-3">
+                            <h6 class="text-info text-uppercase mb-2">Client Status Panel</h6>
+                            <table class="table table-dark table-hover table-sm mb-0 align-middle mono">
+                                <thead>
+                                    <tr>
+                                        <th>Client VM</th>
+                                        <th>Status</th>
+                                        <th>Local Accuracy</th>
+                                        <th>Local Loss</th>
+                                        <th>Model</th>
+                                        <th>Latest Prediction</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if clients %}
+                                        {% for c in clients %}
+                                        <tr>
+                                            <td class="fw-bold text-light">{{ c.client_id }}</td>
+                                            <td><span class="pulse-dot"></span><span class="text-success">{{ c.status }}</span></td>
+                                            <td class="text-success fw-bold">{{ c.local_accuracy }}%</td>
+                                            <td class="text-warning">{{ c.local_loss }}</td>
+                                            <td><span class="badge bg-primary">{{ c.model_version }}</span></td>
+                                            <td class="text-info">{{ c.latest_prediction }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-secondary py-4">
+                                                No active clients yet. Run <strong>python client.py --client Client_01</strong>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Malware Classification Statistics (Dynamically Aggregated from Client Model Predictions) -->
+                        <div class="card card-custom p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-info text-uppercase mb-0"> Detected Malware Types (Model Predictions)</h6>
+                                <span class="badge bg-danger mono">{{ malware_total }} Malware / {{ total_scans }} Total</span>
+                            </div>
+                            {% if malware_stats %}
+                                {% for item in malware_stats %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mono small mb-1">
+                                        <span class="fw-bold text-light">{{ item.type }}</span>
+                                        <span class="text-warning fw-bold">{{ item.percentage }}% ({{ item.count }})</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" style="width: {{ item.percentage }}%"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-secondary py-4 mono small">
+                                    Awaiting neural network predictions from client endpoints...
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Training Progress Graph -->
+                    <div class="col-lg-7">
+                        <div class="card card-custom p-3 mb-3">
+                            <h6 class="text-info text-uppercase mb-2">Training Progress Graph (Global Accuracy & Global Loss per FL Round)</h6>
+                            <canvas id="trainingProgressChart" height="135"></canvas>
+                        </div>
+
+                        <!-- Live Privacy-Preserving Telemetry Stream -->
+                        <div class="card card-custom p-3">
+                            <h6 class="text-info text-uppercase mb-2"> Live Client Prediction Stream (Zero Raw Data Sent)</h6>
+                            <div style="max-height: 220px; overflow-y: auto;">
+                                <table class="table table-dark table-sm mb-0 mono">
+                                    <thead>
+                                        <tr>
+                                            <th>client_id</th>
+                                            <th>malware_type (Model Output)</th>
+                                            <th>prediction_confidence</th>
+                                            <th>timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in logs[:10] %}
+                                        <tr>
+                                            <td class="text-info fw-bold">{{ log.client_id }}</td>
+                                            <td>
+                                                <span class="badge {% if log.malware_type | lower == 'benign' %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ log.malware_type }}
+                                                </span>
+                                            </td>
+                                            <td class="text-warning fw-bold">{{ log.prediction_confidence }} ({{ log.confidence_pct }})</td>
+                                            <td class="text-secondary">{{ log.timestamp }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MALWARE ANALYTICS -->
+            <div class="tab-pane fade" id="tab-mal">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <div class="card card-custom p-3">
+                            <div class="text-secondary small text-uppercase">Global Accuracy</div>
+                            <h3 class="fw-bold text-success mt-1 mb-0 mono">{{ overview.global_accuracy }}%</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card card-custom p-3">
+                            <div class="text-secondary small text-uppercase">Weighted Precision</div>
+                            <h3 class="fw-bold text-info mt-1 mb-0 mono">{{ overview.global_precision }}%</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card card-custom p-3">
+                            <div class="text-secondary small text-uppercase">Weighted Recall</div>
+                            <h3 class="fw-bold text-warning mt-1 mb-0 mono">{{ overview.global_recall }}%</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card card-custom p-3">
+                            <div class="text-secondary small text-uppercase">Weighted F1-Score</div>
+                            <h3 class="fw-bold text-primary mt-1 mb-0 mono">{{ overview.global_f1 }}%</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-lg-5">
+                        <div class="card card-custom p-3 mb-3">
+                            <h6 class="text-info text-uppercase mb-2">Malware Type Distribution</h6>
+                            <canvas id="malwareDistChart" height="180"></canvas>
+                        </div>
+                        <div class="card card-custom p-3">
+                            <h6 class="text-info text-uppercase mb-2"> Detection Counts</h6>
+                            <canvas id="malwareCountsChart" height="140"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        <div class="card card-custom p-3">
+                            <h6 class="text-info text-uppercase mb-2">All Client Predictions ({{ total_scans }} Total)</h6>
+                            <div style="max-height: 430px; overflow-y: auto;">
+                                <table class="table table-dark table-hover table-sm mb-0 mono">
+                                    <thead>
+                                        <tr>
+                                            <th>client_id</th>
+                                            <th>malware_type</th>
+                                            <th>prediction_confidence</th>
+                                            <th>Model Version</th>
+                                            <th>timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in logs %}
+                                        <tr>
+                                            <td class="text-info">{{ log.client_id }}</td>
+                                            <td>
+                                                <span class="badge {% if log.malware_type | lower == 'benign' %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ log.malware_type }}
+                                                </span>
+                                            </td>
+                                            <td class="text-warning">{{ log.prediction_confidence }}</td>
+                                            <td><span class="badge bg-secondary">{{ log.model_version }}</span></td>
+                                            <td class="text-secondary">{{ log.timestamp }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: FEDERATED LEARNING -->
+            <div class="tab-pane fade" id="tab-fl">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="card card-custom p-3">
+                            <h6 class="text-success text-uppercase mb-2"> Accuracy vs. Rounds</h6>
+                            <canvas id="accRoundsChart" height="135"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card card-custom p-3">
+                            <h6 class="text-danger text-uppercase mb-2">Loss vs. Rounds</h6>
+                            <canvas id="lossRoundsChart" height="135"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-lg-7">
+                        <div class="card card-custom p-3 mb-3">
+                            <h6 class="text-info text-uppercase mb-2">Client Participation & Client Contribution Section</h6>
+                            <table class="table table-dark table-sm mb-0 mono align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Client ID</th>
+                                        <th>Rounds</th>
+                                        <th>Local Samples ($n_k$)</th>
+                                        <th>Contribution ($\alpha_k$)</th>
+                                        <th>Local Accuracy</th>
+                                        <th>Local F1</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in clients %}
+                                    <tr>
+                                        <td class="fw-bold text-info">{{ c.client_id }}</td>
+                                        <td>{{ c.rounds_participated }}</td>
+                                        <td>{{ c.num_samples }}</td>
+                                        <td class="text-warning fw-bold">{{ c.contribution_pct }}%</td>
+                                        <td class="text-success fw-bold">{{ c.local_accuracy }}%</td>
+                                        <td>{{ c.local_f1 }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card card-custom p-3">
+                            <h6 class="text-info text-uppercase mb-2">Federated Aggregation Round Ledger</h6>
+                            <table class="table table-dark table-sm mb-0 mono">
+                                <thead>
+                                    <tr>
+                                        <th>Round</th>
+                                        <th>Model</th>
+                                        <th>Clients</th>
+                                        <th>Accuracy</th>
+                                        <th>Loss</th>
+                                        <th>||ΔW||₂</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in rounds %}
+                                    <tr>
+                                        <td>#{{ r.round }}</td>
+                                        <td><span class="badge bg-primary">{{ r.version }}</span></td>
+                                        <td>{{ r.active_clients }} ({{ r.participants }})</td>
+                                        <td class="text-success fw-bold">{{ r.accuracy }}%</td>
+                                        <td class="text-danger">{{ r.loss }}</td>
+                                        <td class="text-info">{{ r.weight_delta }}</td>
+                                        <td class="text-secondary">{{ r.timestamp }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="card card-custom p-3 h-100">
+                            <h6 class="text-info text-uppercase mb-2">Client Contribution & Local Accuracy Comparison</h6>
+                            <canvas id="contribChart" height="210"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function saveTab(id) { localStorage.setItem('fed_tab', id); }
+        document.addEventListener("DOMContentLoaded", () => {
+            const t = localStorage.getItem('fed_tab');
+            if (t && document.getElementById(t)) new bootstrap.Tab(document.getElementById(t)).show();
+        });
+
+        const rLabels = {{ round_labels | tojson }};
+        const rAccs = {{ round_accuracies | tojson }};
+        const rLosses = {{ round_losses | tojson }};
+        const mLabels = {{ malware_labels | tojson }};
+        const mCounts = {{ malware_counts | tojson }};
+
+        new Chart(document.getElementById('trainingProgressChart'), {
+            type: 'line',
+            data: {
+                labels: rLabels,
+                datasets: [
+                    { label: 'Global Accuracy (%)', data: rAccs, borderColor: '#10b981', yAxisID: 'yA', tension: 0.3 },
+                    { label: 'Global Loss', data: rLosses, borderColor: '#ef4444', yAxisID: 'yL', tension: 0.3 }
+                ]
+            },
+            options: { animation: false, scales: { yA: { position: 'left' }, yL: { position: 'right' } } }
+        });
+
+        new Chart(document.getElementById('malwareDistChart'), {
+            type: 'doughnut',
+            data: { labels: mLabels, datasets: [{ data: mCounts, backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#3b82f6', '#10b981', '#a855f7'] }] },
+            options: { animation: false }
+        });
+
+        new Chart(document.getElementById('malwareCountsChart'), {
+            type: 'bar',
+            data: { labels: mLabels, datasets: [{ label: 'Predicted Count', data: mCounts, backgroundColor: '#3b82f6' }] },
+            options: { animation: false }
+        });
+
+        new Chart(document.getElementById('accRoundsChart'), {
+            type: 'line',
+            data: { labels: rLabels, datasets: [{ label: 'Global Accuracy (%)', data: rAccs, borderColor: '#10b981', fill: true, backgroundColor: 'rgba(16,185,129,0.15)' }] },
+            options: { animation: false }
+        });
+
+        new Chart(document.getElementById('lossRoundsChart'), {
+            type: 'line',
+            data: { labels: rLabels, datasets: [{ label: 'Global Loss', data: rLosses, borderColor: '#ef4444', fill: true, backgroundColor: 'rgba(239,68,68,0.15)' }] },
+            options: { animation: false }
+        });
+
+        new Chart(document.getElementById('contribChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ contrib_labels | tojson }},
+                datasets: [
+                    { label: 'Local Accuracy (%)', data: {{ contrib_accs | tojson }}, backgroundColor: '#10b981' }
+                ]
+            },
+            options: { animation: false }
+        });
+    </script>
 </body>
 </html>
