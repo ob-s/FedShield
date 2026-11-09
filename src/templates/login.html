@@ -56,13 +56,13 @@
                     <span class="pulse-dot"></span>FEDAVG AGGREGATION ENGINE ONLINE
                 </span>
             </div>
-            <h4 class="fw-bold text-light mt-3">🛡️ FedSec EDR Command</h4>
+            <h4 class="fw-bold text-light mt-3">FedShield EDR Command</h4>
             <p class="text-secondary small mb-0">Federated Malware Detection & Endpoint Telemetry</p>
         </div>
 
         {% if error %}
         <div class="alert alert-danger py-2 small text-center" role="alert">
-            ⚠️ {{ error }}
+             {{ error }}
         </div>
         {% endif %}
 
@@ -72,17 +72,17 @@
                 <input type="text" name="username" class="form-control" placeholder="Enter operator username" required autofocus>
             </div>
             <div class="mb-4">
-                <label class="form-label small text-secondary text-uppercase fw-semibold">Security Passkey</label>
+                <label class="form-label small text-secondary text-uppercase fw-semibold">Password</label>
                 <input type="password" name="password" class="form-control" placeholder="••••••••••••" required>
             </div>
             <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">
-                Authenticate & Launch C2 Console
+                Login
             </button>
         </form>
 
         <div class="mt-4 pt-3 border-top border-secondary text-center mono text-secondary">
             <div>Zero-Raw-Data Architecture • TLS/JSON Telemetry</div>
-            <div class="text-muted mt-1">Default Demo: <strong>admin</strong> / <strong>fedsec2026</strong></div>
+            <div class="text-muted mt-1">Default: <strong>admin</strong> / <strong>fedshield2026</strong></div>
         </div>
     </div>
 </body>
